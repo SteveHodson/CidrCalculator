@@ -1,0 +1,46 @@
+# Subnet CIDR Lambda function
+This utility lambda function will calculate all the subnet cidr ranges for a given VPC Cidr range.
+## Introduction
+Usually VPCs are broken up into at least three subnets whose size is equally distributed across those subnets. For instance a VPC whose cidr block is /21 then across three tiers the subnets are split up equally into /24 cidr blocks that describe the IP allocation for each subnet. This approach does work however it can be wasteful as it assumes the same number of nodes required for each subnet type, private subnets and public subnets, for example.  In my experience a persistence subnet would require less nodes than say the public subnet which itself would require less nodes than a private subnet.
+
+The approach I have taken here divides up a VPC using a ratio 4:2:1 (private:public:persistence) and achieves this by halving the available cidr block putting one half aside and halving the other block. All ranges are recorded and return in an array ready to be used by the Cloudformation when building a network.
+## Usage
+```sh
+./install.sh [project_name]
+```
+The installation script expects two parameters (the VPC Cidr Range and Number of Availabilty Zones to assume) and then divides the VPC Cidr range between the AZs and three subnet tiers, public, private and persistence.  Using newly created zip file is then uploaded to a S3 bucket before being registered with the Lambda Service.
+This can be tested using the following json:
+```javascript
+{
+  "StackId": "arn:aws:cloudformation:eu-west-1:EXAMPLE/stack-name/guid",
+  "ResponseURL": "http://pre-signed-S3-url-for-response",
+  "ResourceProperties": {
+    "VpcCidrBlock": "10.0.0.0/16",
+    "Zones": "2",
+    "Layers": [
+        "public",
+        "private"
+        ]
+  },
+  "RequestType": "Create",
+  "ResourceType": "Custom::TestResource",
+  "RequestId": "unique id for this create request",
+  "LogicalResourceId": "MyTestResource"
+}
+```
+Note: Number of zones supported is bwteen 1 and 5 and whilst the solution itself won;t break at higher values it will prove wasteful as AWS has at most 5 AZs per region.
+## Cloudformation
+This lambda function has been written to extend the functionality of cloudformation in relation to calculating subbnet cidr ranges used in the creation of subnets.  An example written in yaml is shown.
+```yaml
+CidrBlockCalculation:
+    Type: Custom::SubnetCidrCalculator
+    Properties:
+        ServiceToken: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:SubnetCidrCalculator
+        VpcCidrBlock: 10.0.0.0/16
+        Layers: [public, private]
+        Zones: 3
+```
+## Permissions
+The lambda function requires only access to CloudWatch
+## License
+Feel free to use this little tool anyway you wish.

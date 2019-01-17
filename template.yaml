@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CidrCalculator Lambda Function for use with CFN custom resources.
+Resources:
+  # The lambda function needs read-only access to EC2
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action: 
+            - sts:AssumeRole     
+  # Create the lambda function from the code stored in the bucket specified in params 
+  Function:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SubnetCidrCalculator
+      Description: Function calculates the Cidr Ranges, for use with CFN
+      Code: cidr_calc.zip
+      Handler: calculator.handler
+      Role: !GetAtt Role.Arn 
+      Runtime: python3.6
