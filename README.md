@@ -34,7 +34,7 @@ CidrBlockCalculation:
     Properties:
         ServiceToken: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:SubnetCidrCalculator
         VpcCidrBlock: 10.0.0.0/16
-        Layers: [public, private]
+        Layers: 2
         Zones: 3
 ```
 ## Build
