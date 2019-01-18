@@ -10,15 +10,20 @@ Here an example of a VPC with three layers; note the relative sizes of the boxes
 This function requires the following parameters:
 * VpcCidrBlock - a string defining the CIDR block used by the VPC e.g. 10.0.0.0/24
 * Zones - number of availability zones that the VPC will span.
-* Layers - list of names of the functional layers of the VPC.
-
-NB The order of the Layers is important with the first mentioned getting the largest share of the IP allocation.
+* Layers - number of functional layers that the VPC will have.
 
 ## Output
-The output from this function will be a dictionary object containing the calculated CIDR blocks for the functional layers and comma delimited lists 
-For example here is the output from a CIDR calculation for a VPC (cidr_block=10.0.0.0/16, zones=3 and layers="public,private"
+The output from this function will be a dictionary object containing comma delimited lists of CIDR blocks for each network layer.
 ```sh
-{'public': '10.0.0.0/17', 'publicList': '10.0.0.0/19,10.0.32.0/19,10.0.64.0/19,10.0.96.0/19', 'private': '10.0.128.0/18', 'privateList': '10.0.128.0/20,10.0.144.0/20,10.0.160.0/20,10.0.176.0/20'}
+[
+  'Layer1': '<CIDR Block of layer>,<zone1 cidr>,<zone1 cidr>,...',
+  'Layer2': '<CIDR Block of layer>,<zone1 cidr>,<zone1 cidr>,...',
+  ...
+]
+```
+For example here is the output from a CIDR calculation for a VPC (cidr_block=10.0.0.0/16, zones=2 and layers=2
+```sh
+{'layer1': '10.0.0.0/17,10.0.0.0/18,10.0.64.0/18', 'layer2': '10.0.128.0/18,10.0.128.0/19,10.0.160.0/19'}
 ```
 This output is then to be used within your cloudformation subnet creation stacks.
 ## Use in Cloudformation
@@ -44,11 +49,8 @@ This can be tested in the AWS MAnagement Console using the following json:
   "ResponseURL": "http://pre-signed-S3-url-for-response",
   "ResourceProperties": {
     "VpcCidrBlock": "10.0.0.0/16",
-    "Zones": "2",
-    "Layers": [
-        "public",
-        "private"
-        ]
+    "ZonesRequired": "2",
+    "Layers": "2"
   },
   "RequestType": "Create",
   "ResourceType": "Custom::TestResource",
@@ -56,7 +58,7 @@ This can be tested in the AWS MAnagement Console using the following json:
   "LogicalResourceId": "MyTestResource"
 }
 ```
-Note: Number of zones supported is between 1 and 5 and whilst the solution itself won;t break at higher values it will prove wasteful as AWS has at most 5 AZs per region.
+Note: Number of zones supported is between 1 and 4 and whilst the solution itself won't break at higher values it will prove wasteful as AWS has at most 4 AZs per region.
 ## Permissions
 The lambda function uses the BasicExecutionRole which accesses CloudWatch only.
 ## License
